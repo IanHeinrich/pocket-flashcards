@@ -1,0 +1,66 @@
+name: Deploy to GitHub Pages
+
+# One-time setup: in the repository's Settings -> Pages, set the source to
+# "GitHub Actions". Without it, the deploy job fails.
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+# Least privilege: only the deploy job can write to Pages or mint an OIDC token,
+# so nothing that runs during `npm ci` or the checks can deploy.
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm test
+      - run: npm run lint
+      - run: npm run typecheck
+
+  deploy:
+    needs: check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Stamp the service worker with the commit
+        run: |
+          if ! grep -q "^const VERSION = 'dev';$" sw.js; then
+            echo "sw.js must contain exactly the line: const VERSION = 'dev';" >&2
+            exit 1
+          fi
+          sed -i "s/^const VERSION = 'dev';$/const VERSION = '${GITHUB_SHA:0:12}';/" sw.js
+
+      - name: Assemble the site
+        run: |
+          mkdir _site
+          cp -r index.html sw.js manifest.webmanifest src icons vendor examples _site/
+          touch _site/.nojekyll
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4

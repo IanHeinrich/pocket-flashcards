@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en" data-theme="system">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <meta
+      name="description"
+      content="Private, offline flashcards in plain Markdown. Your cards never leave your device."
+    />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#f5f6fa" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0d0f15" media="(prefers-color-scheme: dark)" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Flashcards" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <title>Pocket Flashcards</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="icons/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+    <link rel="stylesheet" href="src/styles/tokens.css" />
+    <link rel="stylesheet" href="src/styles/base.css" />
+    <link rel="stylesheet" href="src/styles/layout.css" />
+    <link rel="stylesheet" href="src/styles/components.css" />
+    <script type="module" src="src/app.js"></script>
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="app-header-inner">
+        <a class="brand" href="#/">
+          <img src="icons/favicon.svg" alt="" width="28" height="28" />
+          <span>Pocket Flashcards</span>
+        </a>
+        <nav class="app-nav" aria-label="Main">
+          <a class="nav-link" href="#/" data-nav="decks">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="3" y="7" width="14" height="14" rx="2.5" />
+              <path d="M7 3h11.5A2.5 2.5 0 0 1 21 5.5V17" />
+            </svg>
+            <span>Decks</span>
+          </a>
+          <a class="nav-link" href="#/import" data-nav="import">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 3v12M7 10l5 5 5-5" />
+              <path d="M4 17v2.5A1.5 1.5 0 0 0 5.5 21h13a1.5 1.5 0 0 0 1.5-1.5V17" />
+            </svg>
+            <span>Import</span>
+          </a>
+          <a class="nav-link" href="#/search" data-nav="search">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <path d="m20 20-3.5-3.5" />
+            </svg>
+            <span>Search</span>
+          </a>
+          <a class="nav-link" href="#/settings" data-nav="settings">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1" />
+              <circle cx="15" cy="6" r="2" />
+              <circle cx="9" cy="12" r="2" />
+              <circle cx="17" cy="18" r="2" />
+            </svg>
+            <span>Settings</span>
+          </a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="app" class="app-main" tabindex="-1">
+      <noscript>
+        <div class="empty-state">
+          <h1>JavaScript is off</h1>
+          <p>
+            Pocket Flashcards runs entirely in your browser and needs JavaScript to show and store
+            your cards. Turn it on for this site and reload the page.
+          </p>
+        </div>
+      </noscript>
+    </main>
+
+    <div id="toasts" class="toasts" role="status" aria-live="polite"></div>
+    <div id="announcer" class="visually-hidden" aria-live="polite" aria-atomic="true"></div>
+  </body>
+</html>
