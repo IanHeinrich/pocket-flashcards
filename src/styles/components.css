@@ -570,8 +570,7 @@
 }
 
 .card-face .mermaid-block svg {
-  /* Mermaid sets an inline max-width wider than a phone; keep diagrams inside the card. */
-  max-width: 100% !important;
+  /* The inline max-width from diagramMaxWidth() keeps a diagram at its natural size. */
   height: auto;
 }
 

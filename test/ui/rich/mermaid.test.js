@@ -1,7 +1,7 @@
 // @ts-check
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { usesWebImage } from '../../../src/ui/rich/mermaid.js';
+import { diagramMaxWidth, usesWebImage } from '../../../src/ui/rich/mermaid.js';
 
 test('a diagram without images is drawn', () => {
   assert.equal(usesWebImage('flowchart LR\n  A[Start] --> B{Choice}'), false);
@@ -40,4 +40,15 @@ test('quoted and escaped keys are still found', () => {
 
 test('a word that only ends in img is not a key', () => {
   assert.equal(usesWebImage('flowchart TD\n  A[svgimg] --> B'), false);
+});
+
+test('a diagram is capped at its natural width, rounded up, and at the card width', () => {
+  assert.equal(diagramMaxWidth('4 4 167.5 368'), 'min(100%, 168px)');
+  assert.equal(diagramMaxWidth('0,0,651.39,85'), 'min(100%, 652px)');
+});
+
+test('a diagram without a usable viewBox only fits the card', () => {
+  assert.equal(diagramMaxWidth(null), '100%');
+  assert.equal(diagramMaxWidth('0 0'), '100%');
+  assert.equal(diagramMaxWidth('0 0 0 10'), '100%');
 });

@@ -36,8 +36,27 @@ const ESCAPE = /\\(?:x([0-9a-f]{2})|u([0-9a-f]{4})|U([0-9a-f]{8}))/gi;
 
 /** @type {Promise<MermaidApi> | null} */
 let loading = null;
+/** The config last given to `mermaid.initialize`, as JSON, so a theme change re-initialises. */
 /** @type {string | null} */
-let initializedTheme = null;
+let initializedConfig = null;
+
+/** Mermaid theme variables and the app colour token each one takes. */
+const THEME_TOKENS = {
+  background: '--color-surface-raised',
+  primaryColor: '--color-surface-2',
+  primaryBorderColor: '--color-border-strong',
+  primaryTextColor: '--color-text',
+  secondaryColor: '--color-surface',
+  tertiaryColor: '--color-surface',
+  lineColor: '--color-text-muted',
+  textColor: '--color-text',
+  edgeLabelBackground: '--color-surface-raised',
+  clusterBkg: '--color-surface',
+  clusterBorder: '--color-border',
+  noteBkgColor: '--color-surface-2',
+  noteBorderColor: '--color-border-strong',
+  noteTextColor: '--color-text',
+};
 let counter = 0;
 
 /**
@@ -94,6 +113,18 @@ export function usesWebImage(source) {
 }
 
 /**
+ * The CSS `max-width` for a drawn diagram: its natural width from the SVG's `viewBox`,
+ * but never wider than the card. Mermaid's own sizing either overflows a phone or, once
+ * capped at 100%, stretches a small diagram to fill the card.
+ * @param {string | null} viewBox
+ * @returns {string}
+ */
+export function diagramMaxWidth(viewBox) {
+  const width = Number(viewBox?.trim().split(/[\s,]+/)[2]);
+  return Number.isFinite(width) && width > 0 ? `min(100%, ${Math.ceil(width)}px)` : '100%';
+}
+
+/**
  * Draws every `.mermaid-block` under `root`. A block that fails, or that uses an image
  * from the web, keeps its source and gets a short note.
  * @param {ParentNode} root
@@ -120,10 +151,17 @@ export async function renderDiagrams(root, sources, isCancelled) {
     if (!isCancelled()) diagrams.forEach(({ block }) => markFailed(block));
     return;
   }
-  const theme = isDarkTheme() ? 'dark' : 'default';
-  if (initializedTheme !== theme) {
-    mermaid.initialize({ startOnLoad: false, securityLevel: 'strict', secure: SECURE_KEYS, theme });
-    initializedTheme = theme;
+  const config = {
+    startOnLoad: false,
+    securityLevel: 'strict',
+    secure: SECURE_KEYS,
+    theme: 'base',
+    themeVariables: appThemeVariables(),
+  };
+  const key = JSON.stringify(config);
+  if (initializedConfig !== key) {
+    mermaid.initialize(config);
+    initializedConfig = key;
   }
   for (const { block, source } of diagrams) {
     if (isCancelled()) return;
@@ -133,6 +171,7 @@ export async function renderDiagrams(root, sources, isCancelled) {
       if (isCancelled()) return;
       const drawn = parseSvg(svg);
       if (!drawn) throw new Error('Mermaid returned no diagram.');
+      drawn.style.maxWidth = diagramMaxWidth(drawn.getAttribute('viewBox'));
       block.replaceChildren(drawn);
       block.classList.add('is-drawn');
     } catch {
@@ -147,11 +186,35 @@ export async function renderDiagrams(root, sources, isCancelled) {
 }
 
 /**
+ * Mermaid's `base` theme coloured from the app's tokens, so a diagram matches the card in
+ * the light and the dark theme. Custom properties hold `light-dark()` pairs, so each is
+ * resolved through a hidden element to the colour in use now.
+ * @returns {Record<string, string | boolean>}
+ */
+function appThemeVariables() {
+  const probe = h('span', { attrs: { hidden: true } });
+  document.body.append(probe);
+  /** @type {Record<string, string | boolean>} */
+  const variables = {
+    darkMode: isDarkTheme(),
+    // Mermaid's default shadow is a light grey that glows on the dark theme.
+    dropShadow: 'none',
+    fontFamily: getComputedStyle(document.body).fontFamily,
+  };
+  for (const [name, token] of Object.entries(THEME_TOKENS)) {
+    probe.style.color = `var(${token})`;
+    variables[name] = getComputedStyle(probe).color;
+  }
+  probe.remove();
+  return variables;
+}
+
+/**
  * Turns Mermaid's SVG markup into an element without assigning `innerHTML`.
  * Mermaid sanitises its own output under `securityLevel: 'strict'`, and a parsed
  * document never runs scripts.
  * @param {string} svg
- * @returns {Element | null}
+ * @returns {SVGSVGElement | null}
  */
 function parseSvg(svg) {
   const doc = new DOMParser().parseFromString(svg, 'text/html');
